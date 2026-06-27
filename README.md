@@ -98,6 +98,8 @@ See [docs/RFC-0001-Decision-Framework.md](docs/RFC-0001-Decision-Framework.md).
 - [Charity Model — 80/20 split](docs/CHARITY.md)
 - [Transparency System](docs/TRANSPARENCY.md)
 - [Test / Coverage Report](docs/TEST_REPORT.md)
+- [Audit Scope (for security auditors)](docs/AUDIT-SCOPE.md)
+- [Legal Brief (for counsel)](docs/LEGAL-BRIEF.md)
 - [RFC-0001 Decision Framework](docs/RFC-0001-Decision-Framework.md)
 
 ---
