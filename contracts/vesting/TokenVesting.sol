@@ -86,17 +86,27 @@ contract TokenVesting is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Revoke a schedule (team/advisor only). Unvested tokens return to owner.
+     * @notice Revoke a schedule (team/advisor only).
+     *         Already-vested-but-unclaimed tokens go to the beneficiary.
+     *         Unvested tokens return to owner.
      */
     function revoke(address beneficiary) external onlyOwner {
         Schedule storage s = schedules[beneficiary];
         require(s.total > 0, "Vesting: no schedule");
         require(!s.revoked, "Vesting: already revoked");
 
-        uint256 vested = _vestedAmount(s);
-        uint256 unvested = s.total - vested;
+        uint256 vested   = _vestedAmount(s);
+        uint256 claimable = vested - s.released;
+        uint256 unvested  = s.total - vested;
 
         s.revoked = true;
+
+        // Pay out tokens already earned but not yet claimed — do not trap them.
+        if (claimable > 0) {
+            s.released += claimable;
+            token.safeTransfer(beneficiary, claimable);
+            emit TokensClaimed(beneficiary, claimable);
+        }
 
         if (unvested > 0) {
             token.safeTransfer(owner(), unvested);

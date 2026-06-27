@@ -26,6 +26,7 @@ contract MultisigController {
         uint256 approvals;
         uint256 queuedAt;   // timestamp when M approvals reached
         bool    executed;
+        bool    cancelled;
         mapping(address => bool) approved;
     }
 
@@ -36,6 +37,7 @@ contract MultisigController {
     event Approved(uint256 indexed id, address signer);
     event Queued(uint256 indexed id, uint256 executeAfter);
     event Executed(uint256 indexed id);
+    event Cancelled(uint256 indexed id);
 
     modifier onlySigner() {
         require(isSigner[msg.sender], "Multisig: not signer");
@@ -68,9 +70,24 @@ contract MultisigController {
         emit ProposalCreated(id, target, value);
     }
 
+    /**
+     * @notice Cancel a proposal before execution. Requires M signers (same threshold).
+     *         Use when calldata is wrong or the situation has changed.
+     */
+    function cancel(uint256 id) external onlySigner {
+        Proposal storage p = proposals[id];
+        require(!p.executed, "Multisig: already executed");
+        require(!p.cancelled, "Multisig: already cancelled");
+        // Require majority to cancel — prevents a single signer from blocking.
+        require(p.approvals >= required, "Multisig: not enough approvals to cancel");
+        p.cancelled = true;
+        emit Cancelled(id);
+    }
+
     function approve(uint256 id) external onlySigner {
         Proposal storage p = proposals[id];
         require(!p.executed, "Multisig: executed");
+        require(!p.cancelled, "Multisig: cancelled");
         require(!p.approved[msg.sender], "Multisig: already approved");
 
         p.approved[msg.sender] = true;
@@ -86,6 +103,7 @@ contract MultisigController {
     function execute(uint256 id) external onlySigner {
         Proposal storage p = proposals[id];
         require(!p.executed, "Multisig: executed");
+        require(!p.cancelled, "Multisig: cancelled");
         require(p.approvals >= required, "Multisig: not enough approvals");
         require(block.timestamp >= p.queuedAt + MIN_DELAY, "Multisig: delay not passed");
 

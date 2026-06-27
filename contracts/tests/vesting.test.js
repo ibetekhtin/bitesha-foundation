@@ -53,12 +53,27 @@ describe("TokenVesting", () => {
     expect(after).to.be.gt(before);
   });
 
-  it("revoke returns unvested tokens to owner", async () => {
-    await time.increase(CLIFF + DURATION / 4);
-    const ownerBefore = await btsh.balanceOf(owner.address);
+  it("revoke returns unvested tokens to owner and vested-but-unclaimed to beneficiary", async () => {
+    await time.increase(CLIFF + DURATION / 4); // 25% vested
+    const ownerBefore       = await btsh.balanceOf(owner.address);
+    const benefBefore       = await btsh.balanceOf(beneficiary.address);
     await vesting.revoke(beneficiary.address);
-    const ownerAfter = await btsh.balanceOf(owner.address);
+    const ownerAfter        = await btsh.balanceOf(owner.address);
+    const benefAfter        = await btsh.balanceOf(beneficiary.address);
+    // Owner gets back ~75% unvested
     expect(ownerAfter).to.be.gt(ownerBefore);
+    // Beneficiary gets their ~25% already-vested-but-unclaimed
+    expect(benefAfter).to.be.gt(benefBefore);
+    // Together they account for the full amount
+    const ownerGain = ownerAfter - ownerBefore;
+    const benefGain = benefAfter - benefBefore;
+    expect(ownerGain + benefGain).to.be.closeTo(AMOUNT, ethers.parseEther("1"));
+  });
+
+  it("beneficiary cannot claim after revoke (nothing left to claim)", async () => {
+    await time.increase(CLIFF + DURATION / 4);
+    await vesting.revoke(beneficiary.address);
+    await expect(vesting.connect(beneficiary).claim()).to.be.revertedWith("Vesting: revoked");
   });
 
   it("cannot have two schedules for same address", async () => {

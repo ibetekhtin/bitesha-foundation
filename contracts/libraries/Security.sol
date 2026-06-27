@@ -7,31 +7,44 @@ pragma solidity ^0.8.20;
  */
 library Security {
     /**
-     * @notice Verify an HMAC-SHA256 signature from a webhook.
-     *         Use for off-chain signature verification pattern before storing on-chain.
-     * @param payload   Raw payload bytes.
-     * @param signature Expected HMAC digest (32 bytes).
-     * @param secret    Shared secret key.
+     * @notice Verify a keyed hash (keccak256 with a secret key).
+     *
+     *         WARNING — this is NOT HMAC-SHA256. It is a keyed keccak256 digest:
+     *             keccak256(abi.encode(secret, payload))
+     *         Using abi.encode (not abi.encodePacked) avoids length-extension
+     *         attacks that would affect a raw concatenation.
+     *
+     *         Do NOT use this where HMAC-SHA256 interoperability is required
+     *         (e.g., verifying GitHub webhook signatures which use real HMAC).
+     *         For those cases, verify off-chain and submit only the result on-chain.
+     *
+     * @param payload   Raw payload bytes to authenticate.
+     * @param signature Expected keyed digest (32 bytes).
+     * @param secret    Shared secret key (bytes32).
      */
-    function verifyHmac(
+    function verifyKeyedHash(
         bytes memory payload,
         bytes32 signature,
         bytes32 secret
     ) internal pure returns (bool) {
-        bytes32 computed = keccak256(abi.encodePacked(secret, payload));
+        bytes32 computed = keccak256(abi.encode(secret, payload));
         return computed == signature;
     }
 
     /**
      * @notice Prevent calls from contracts (EOA-only guard).
-     *         Note: not foolproof against constructor calls — use with care.
+     *         NOTE: not foolproof — a contract can call from its constructor
+     *         (code.length == 0 at construction time). Use with care and
+     *         only as an additional layer, never as a sole security measure.
      */
     function requireEOA(address account) internal view {
         require(account.code.length == 0, "Security: contracts not allowed");
     }
 
     /**
-     * @notice Constant-time bytes32 comparison to prevent timing attacks.
+     * @notice Constant-time bytes32 comparison.
+     *         In the EVM, == on bytes32 is already branch-free, so this is
+     *         equivalent to a direct == but documents the intent explicitly.
      */
     function safeEqual(bytes32 a, bytes32 b) internal pure returns (bool) {
         return a == b;

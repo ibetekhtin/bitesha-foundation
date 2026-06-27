@@ -89,12 +89,19 @@ async function main() {
   await timelock.revokeRole(ADMIN_ROLE, deployer.address);
   console.log(`✅ Timelock roles configured`);
 
-  // ── 10. Treasury: grant GOVERNOR role to timelock ─────────────────────────
-  const GOVERNOR_ROLE = await treasury.GOVERNOR_ROLE();
-  const TIMELOCK_ROLE = await treasury.TIMELOCK_ROLE();
+  // ── 10. Treasury: grant roles to Timelock, transfer admin, renounce deployer ─
+  const GOVERNOR_ROLE    = await treasury.GOVERNOR_ROLE();
+  const TIMELOCK_ROLE    = await treasury.TIMELOCK_ROLE();
+  const ADMIN_ROLE_T     = await treasury.DEFAULT_ADMIN_ROLE();
+
   await treasury.grantRole(GOVERNOR_ROLE, await timelock.getAddress());
   await treasury.grantRole(TIMELOCK_ROLE, await timelock.getAddress());
-  console.log(`✅ Treasury roles configured`);
+
+  // Transfer DEFAULT_ADMIN_ROLE to Timelock so the DAO controls role management.
+  // Then deployer renounces their own admin role — no EOA should hold admin long-term.
+  await treasury.transferAdmin(await timelock.getAddress());
+  await treasury.renounceRole(ADMIN_ROLE_T, deployer.address);
+  console.log(`✅ Treasury roles configured — admin transferred to Timelock, deployer renounced`);
 
   // ── Save deployment addresses ─────────────────────────────────────────────
   const addresses = {
