@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BITESHA — Live Transparency Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0e14; --card: #151a23; --accent: #41d18b; --accent2: #f0b43a;
+    --text: #e8edf2; --muted: #8a94a3; --line: #232a35;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5; padding: 24px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 8px; }
+  h1 { font-size: 28px; letter-spacing: -0.5px; }
+  .mission { color: var(--muted); margin-bottom: 4px; }
+  .status { font-size: 13px; color: var(--muted); margin-bottom: 24px; text-align: center; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px; position: relative; overflow: hidden;
+  }
+  .card .label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .card .value { font-size: 30px; font-weight: 700; margin-top: 6px; }
+  .card .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .food .value { color: var(--accent); }
+  .ops .value { color: var(--accent2); }
+  .bar { height: 10px; border-radius: 6px; background: var(--line); margin: 20px 0 6px; overflow: hidden; display: flex; }
+  .bar .food { background: var(--accent); }
+  .bar .ops { background: var(--accent2); }
+  .barlabels { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .section-title { margin: 32px 0 12px; font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 14px; overflow: hidden; }
+  th, td { padding: 12px 14px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+  td a { color: var(--accent); text-decoration: none; }
+  .controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+  input {
+    background: var(--card); border: 1px solid var(--line); color: var(--text);
+    padding: 10px 14px; border-radius: 10px; font-size: 13px; width: 420px; max-width: 100%;
+  }
+  button {
+    background: var(--accent); color: #06281a; border: none; padding: 10px 18px;
+    border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px;
+  }
+  .note { font-size: 12px; color: var(--muted); margin-top: 28px; text-align: center; line-height: 1.6; }
+  .pledge { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; margin-top: 24px; font-size: 14px; color: var(--muted); }
+  .pledge b { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🍽️ BITESHA</h1>
+    <p class="mission">Feeding people on the streets of New York — verifiably.</p>
+  </header>
+
+  <div class="controls">
+    <input id="vault" placeholder="CharityVault address (0x…)" />
+    <input id="rpc" placeholder="RPC URL (e.g. https://mainnet.base.org)" style="width:280px" />
+    <button onclick="load()">Load live data</button>
+  </div>
+  <p class="status" id="status">Enter the vault address and an RPC URL, then click Load.</p>
+
+  <div class="grid">
+    <div class="card"><div class="label">Total raised</div><div class="value" id="raised">—</div><div class="sub">USDC received all-time</div></div>
+    <div class="card food"><div class="label">To food</div><div class="value" id="food">—</div><div class="sub" id="foodAvail">available now: —</div></div>
+    <div class="card ops"><div class="label">To operations</div><div class="value" id="ops">—</div><div class="sub" id="opsAvail">available now: —</div></div>
+    <div class="card"><div class="label">Meals funded</div><div class="value" id="meals">—</div><div class="sub">recorded on-chain</div></div>
+  </div>
+
+  <div class="bar"><div class="food" id="barFood" style="width:80%"></div><div class="ops" id="barOps" style="width:20%"></div></div>
+  <div class="barlabels"><span>🍽️ Food share: <b id="foodPct">80.00%</b> (floor 80%)</span><span>⚙️ Ops: <span id="opsPct">20.00%</span></span></div>
+
+  <div class="pledge">
+    <b>The 80/20 split is locked in code.</b> Every dollar that enters the vault is split
+    80% food / 20% operations by an immutable smart contract. Rounding always favours food,
+    so the food share is provably ≥ 80% — never less.
+  </div>
+
+  <h3 class="section-title">Recent food spending (on-chain)</h3>
+  <table>
+    <thead><tr><th>Amount (USDC)</th><th>Meals</th><th>Purpose</th><th>Receipt</th><th>Tx</th></tr></thead>
+    <tbody id="spends"><tr><td colspan="5" style="color:var(--muted)">No data loaded.</td></tr></tbody>
+  </table>
+
+  <p class="note">
+    This dashboard reads directly from the blockchain — nothing here is self-reported.<br/>
+    Monthly signed reports anchor receipts, photos and videos via the TransparencyRegistry.<br/>
+    Verify any report yourself with <code>scripts/verify-report.js</code>.
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+<script>
+const ABI = [
+  "function stats() view returns (uint256 received,uint256 allocatedFood,uint256 allocatedOps,uint256 spentFood,uint256 spentOps,uint256 availableFood,uint256 availableOps)",
+  "function totalMealsFunded() view returns (uint256)",
+  "function effectiveFoodShareBps() view returns (uint256)",
+  "event FoodSpent(address indexed to, uint256 amount, uint256 mealsFunded, string purpose, bytes32 receiptHash)"
+];
+
+// USDC has 6 decimals
+const fmtUSD = (v) => "$" + Number(ethers.formatUnits(v, 6)).toLocaleString(undefined, {maximumFractionDigits: 2});
+
+async function load() {
+  const vaultAddr = document.getElementById("vault").value.trim();
+  const rpc = document.getElementById("rpc").value.trim();
+  const status = document.getElementById("status");
+  if (!vaultAddr || !rpc) { status.textContent = "Please provide both the vault address and an RPC URL."; return; }
+
+  try {
+    status.textContent = "Connecting…";
+    const provider = new ethers.JsonRpcProvider(rpc);
+    const vault = new ethers.Contract(vaultAddr, ABI, provider);
+
+    const s = await vault.stats();
+    const meals = await vault.totalMealsFunded();
+    const bps = await vault.effectiveFoodShareBps();
+
+    document.getElementById("raised").textContent = fmtUSD(s.received);
+    document.getElementById("food").textContent = fmtUSD(s.allocatedFood);
+    document.getElementById("ops").textContent = fmtUSD(s.allocatedOps);
+    document.getElementById("meals").textContent = Number(meals).toLocaleString();
+    document.getElementById("foodAvail").textContent = "available now: " + fmtUSD(s.availableFood);
+    document.getElementById("opsAvail").textContent = "available now: " + fmtUSD(s.availableOps);
+
+    const foodPct = Number(bps) / 100;
+    document.getElementById("foodPct").textContent = foodPct.toFixed(2) + "%";
+    document.getElementById("opsPct").textContent = (100 - foodPct).toFixed(2) + "%";
+    document.getElementById("barFood").style.width = foodPct + "%";
+    document.getElementById("barOps").style.width = (100 - foodPct) + "%";
+
+    // Recent food spends
+    const logs = await vault.queryFilter(vault.filters.FoodSpent());
+    const rows = logs.slice(-15).reverse().map(l => {
+      const tx = l.transactionHash;
+      const short = tx.slice(0, 10) + "…";
+      return `<tr>
+        <td>${fmtUSD(l.args.amount)}</td>
+        <td>${Number(l.args.mealsFunded).toLocaleString()}</td>
+        <td>${l.args.purpose || "—"}</td>
+        <td>${l.args.receiptHash.slice(0,10)}…</td>
+        <td><a href="#" title="${tx}">${short}</a></td>
+      </tr>`;
+    }).join("");
+    document.getElementById("spends").innerHTML = rows || `<tr><td colspan="5" style="color:var(--muted)">No food spending yet.</td></tr>`;
+
+    status.textContent = "Live data loaded from chain — last refresh " + new Date().toLocaleString();
+  } catch (e) {
+    status.textContent = "Error: " + (e.message || e);
+  }
+}
+</script>
+</body>
+</html>

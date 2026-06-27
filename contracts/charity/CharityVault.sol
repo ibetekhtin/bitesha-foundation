@@ -61,10 +61,14 @@ contract CharityVault is AccessControl, ReentrancyGuard {
     uint256 public totalSpentFood;
     uint256 public totalSpentOps;
 
+    // Social-impact counter: meals funded by food spending, recorded on-chain.
+    // This is the on-chain source of truth behind any "people helped" dashboard.
+    uint256 public totalMealsFunded;
+
     // ── Events ─────────────────────────────────────────────────────────────
     event Deposited(address indexed from, uint256 amount, uint256 toFood, uint256 toOps);
     event Synced(uint256 unaccounted, uint256 toFood, uint256 toOps);
-    event FoodSpent(address indexed to, uint256 amount, string purpose, bytes32 receiptHash);
+    event FoodSpent(address indexed to, uint256 amount, uint256 mealsFunded, string purpose, bytes32 receiptHash);
     event OpsSpent(address indexed to, uint256 amount, string purpose, bytes32 receiptHash);
 
     constructor(address _stablecoin, address admin) {
@@ -131,10 +135,17 @@ contract CharityVault is AccessControl, ReentrancyGuard {
      * @notice Spend from the FOOD fund to buy food (off-chain, in NYC).
      * @param to          Supplier / payout address.
      * @param amount      Stablecoin amount.
+     * @param mealsFunded Number of meals this purchase funds (on-chain impact record).
      * @param purpose     Human-readable purpose (e.g. "500 meals — Bronx, 2026-07-01").
      * @param receiptHash Hash of the off-chain receipt/invoice (IPFS CID hash or keccak).
      */
-    function spendFood(address to, uint256 amount, string calldata purpose, bytes32 receiptHash)
+    function spendFood(
+        address to,
+        uint256 amount,
+        uint256 mealsFunded,
+        string calldata purpose,
+        bytes32 receiptHash
+    )
         external
         onlyRole(FOOD_SPENDER_ROLE)
         nonReentrant
@@ -142,11 +153,12 @@ contract CharityVault is AccessControl, ReentrancyGuard {
         require(to != address(0), "Charity: zero recipient");
         require(amount > 0 && amount <= foodBalance, "Charity: invalid food amount");
 
-        foodBalance    -= amount;
-        totalSpentFood += amount;
+        foodBalance      -= amount;
+        totalSpentFood   += amount;
+        totalMealsFunded += mealsFunded;
 
         stablecoin.safeTransfer(to, amount);
-        emit FoodSpent(to, amount, purpose, receiptHash);
+        emit FoodSpent(to, amount, mealsFunded, purpose, receiptHash);
     }
 
     /**

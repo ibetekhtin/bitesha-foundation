@@ -12,3 +12,6 @@ typechain-types/
 deployments/base-mainnet.json
 
 *.log
+
+# Generated monthly report artifacts
+reports/

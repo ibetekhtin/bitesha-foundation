@@ -159,52 +159,58 @@ describe("CharityVault", () => {
 
     it("food operator can spend from food fund", async () => {
       const before = await token.balanceOf(supplier.address);
-      await vault.connect(foodOp).spendFood(supplier.address, usdc(500), "500 meals Bronx", RECEIPT);
+      await vault.connect(foodOp).spendFood(supplier.address, usdc(500), 500, "500 meals Bronx", RECEIPT);
       expect(await token.balanceOf(supplier.address)).to.equal(before + usdc(500));
       expect(await vault.foodBalance()).to.equal(usdc(300));
       expect(await vault.totalSpentFood()).to.equal(usdc(500));
     });
 
+    it("records meals funded on-chain", async () => {
+      await vault.connect(foodOp).spendFood(supplier.address, usdc(200), 200, "200 meals Queens", RECEIPT);
+      await vault.connect(foodOp).spendFood(supplier.address, usdc(100), 90, "90 meals Harlem", RECEIPT);
+      expect(await vault.totalMealsFunded()).to.equal(290n);
+    });
+
     it("cannot spend more than food balance", async () => {
       await expect(
-        vault.connect(foodOp).spendFood(supplier.address, usdc(801), "too much", RECEIPT)
+        vault.connect(foodOp).spendFood(supplier.address, usdc(801), 800, "too much", RECEIPT)
       ).to.be.revertedWith("Charity: invalid food amount");
     });
 
     it("cannot spend food fund from ops role", async () => {
       await expect(
-        vault.connect(opsOp).spendFood(supplier.address, usdc(100), "wrong role", RECEIPT)
+        vault.connect(opsOp).spendFood(supplier.address, usdc(100), 100, "wrong role", RECEIPT)
       ).to.be.reverted;
     });
 
     it("non-spender cannot spend food", async () => {
       await expect(
-        vault.connect(attacker).spendFood(attacker.address, usdc(100), "theft", RECEIPT)
+        vault.connect(attacker).spendFood(attacker.address, usdc(100), 100, "theft", RECEIPT)
       ).to.be.reverted;
     });
 
     it("reverts on zero recipient", async () => {
       await expect(
-        vault.connect(foodOp).spendFood(ethers.ZeroAddress, usdc(100), "x", RECEIPT)
+        vault.connect(foodOp).spendFood(ethers.ZeroAddress, usdc(100), 100, "x", RECEIPT)
       ).to.be.revertedWith("Charity: zero recipient");
     });
 
     it("reverts on zero amount", async () => {
       await expect(
-        vault.connect(foodOp).spendFood(supplier.address, 0, "x", RECEIPT)
+        vault.connect(foodOp).spendFood(supplier.address, 0, 0, "x", RECEIPT)
       ).to.be.revertedWith("Charity: invalid food amount");
     });
 
-    it("emits FoodSpent with purpose and receipt", async () => {
+    it("emits FoodSpent with meals, purpose and receipt", async () => {
       await expect(
-        vault.connect(foodOp).spendFood(supplier.address, usdc(100), "100 meals Harlem", RECEIPT)
+        vault.connect(foodOp).spendFood(supplier.address, usdc(100), 100, "100 meals Harlem", RECEIPT)
       )
         .to.emit(vault, "FoodSpent")
-        .withArgs(supplier.address, usdc(100), "100 meals Harlem", RECEIPT);
+        .withArgs(supplier.address, usdc(100), 100, "100 meals Harlem", RECEIPT);
     });
 
     it("food spending does NOT touch the ops fund", async () => {
-      await vault.connect(foodOp).spendFood(supplier.address, usdc(800), "all food", RECEIPT);
+      await vault.connect(foodOp).spendFood(supplier.address, usdc(800), 800, "all food", RECEIPT);
       expect(await vault.opsBalance()).to.equal(usdc(200));
     });
   });
@@ -255,7 +261,7 @@ describe("CharityVault", () => {
   describe("Transparency", () => {
     it("stats() returns the full picture", async () => {
       await vault.connect(donor).deposit(usdc(1000));
-      await vault.connect(foodOp).spendFood(supplier.address, usdc(300), "meals", ethers.ZeroHash);
+      await vault.connect(foodOp).spendFood(supplier.address, usdc(300), 300, "meals", ethers.ZeroHash);
       await vault.connect(opsOp).spendOps(supplier.address, usdc(50), "ops", ethers.ZeroHash);
 
       const s = await vault.stats();
@@ -279,7 +285,7 @@ describe("CharityVault", () => {
 
     it("the on-chain invariant holds: foodBalance + opsBalance == vault USDC balance", async () => {
       await vault.connect(donor).deposit(usdc(1234));
-      await vault.connect(foodOp).spendFood(supplier.address, usdc(100), "x", ethers.ZeroHash);
+      await vault.connect(foodOp).spendFood(supplier.address, usdc(100), 100, "x", ethers.ZeroHash);
       const onChain = await token.balanceOf(await vault.getAddress());
       expect((await vault.foodBalance()) + (await vault.opsBalance())).to.equal(onChain);
     });
