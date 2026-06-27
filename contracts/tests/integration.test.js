@@ -9,7 +9,7 @@ const CLIFF_1Y      = 365 * 24 * 3600;
 const VEST_3Y       = 3 * 365 * 24 * 3600;
 
 describe("Integration", () => {
-  let btsh, timelock, gov, treasury, vesting, staking;
+  let btsh, timelock, gov, treasury, vesting;
   let deployer, voter1, voter2, teamMember, recipient;
 
   beforeEach(async () => {
@@ -35,11 +35,7 @@ describe("Integration", () => {
     const Vesting = await ethers.getContractFactory("TokenVesting");
     vesting = await Vesting.deploy(await btsh.getAddress(), deployer.address);
 
-    // 6. Deploy Staking
-    const Staking = await ethers.getContractFactory("BTSHStaking");
-    staking = await Staking.deploy(await btsh.getAddress(), deployer.address);
-
-    // 7. Genesis mint → treasury
+    // 6. Genesis mint → treasury
     await btsh.mintInitial(await treasury.getAddress(), ethers.parseEther("1000000000"));
 
     // 8. Wire Timelock roles
@@ -70,10 +66,10 @@ describe("Integration", () => {
     // In this test we handle it differently — re-setup cleanly below.
   });
 
-  // ── Full token flow: treasury → staking → governance ──────────────────────
+  // ── Full token flow: treasury → governance ────────────────────────────────
 
-  describe("Token flow: treasury → stakers → governance", () => {
-    let localBtsh, localTimelock, localGov, localTreasury, localStaking;
+  describe("Token flow: holders → governance", () => {
+    let localBtsh, localTimelock, localGov, localTreasury;
 
     beforeEach(async () => {
       // Clean slate with explicit distribution ordering
@@ -81,13 +77,11 @@ describe("Integration", () => {
       const Timelock = await ethers.getContractFactory("BITESHATimelock");
       const Gov      = await ethers.getContractFactory("BITESHAGovernance");
       const Treasury = await ethers.getContractFactory("BITESHATreasury");
-      const Staking  = await ethers.getContractFactory("BTSHStaking");
 
       localBtsh     = await BTSH.deploy(deployer.address);
       localTimelock = await Timelock.deploy([], [], deployer.address);
       localGov      = await Gov.deploy(await localBtsh.getAddress(), await localTimelock.getAddress());
       localTreasury = await Treasury.deploy(await localBtsh.getAddress(), deployer.address);
-      localStaking  = await Staking.deploy(await localBtsh.getAddress(), deployer.address);
 
       // Mint to deployer (not treasury) so we can distribute freely in tests
       await localBtsh.mintInitial(deployer.address, ethers.parseEther("1000000000"));
@@ -108,9 +102,7 @@ describe("Integration", () => {
       await localTimelock.revokeRole(ADMIN, deployer.address);
     });
 
-    it("voter can stake BTSH and participate in governance", async () => {
-      // Delegate first (already done in beforeEach)
-      // Propose something as voter1
+    it("holder can propose and pass a governance vote", async () => {
       const tx = await localGov.connect(voter1).propose(
         [recipient.address], [0], ["0x"], "Integration test proposal"
       );
@@ -127,45 +119,29 @@ describe("Integration", () => {
       expect(await localGov.state(id)).to.equal(4); // Succeeded
     });
 
-    it("staking does not affect governance voting weight (votes come from token delegation)", async () => {
-      // voter1 stakes half their tokens
-      await localBtsh.connect(voter1).approve(await localStaking.getAddress(), ethers.MaxUint256);
-      await localStaking.connect(voter1).stake(ethers.parseEther("100000000"));
-
-      // Voting weight comes from BTSH balance delegation, not staking contract
-      // voter1 delegated their tokens in beforeEach — staking transfers tokens OUT
-      // so their voting weight decreases when they stake (since ERC20Votes tracks balance)
+    it("voting weight tracks delegated BTSH balance (no staking, no yield)", async () => {
+      // Donation+governance model: voting power comes purely from token delegation.
       const votes = await localBtsh.getVotes(voter1.address);
-      // After staking 100M, voter1 should have 100M votes (200M - 100M transferred to staking)
-      expect(votes).to.be.closeTo(ethers.parseEther("100000000"), ethers.parseEther("1000000"));
+      expect(votes).to.equal(ethers.parseEther("200000000"));
     });
   });
 
-  // ── Vesting → claim → stake lifecycle ─────────────────────────────────────
+  // ── Vesting → claim → delegate lifecycle ──────────────────────────────────
 
-  describe("Vesting → claim → stake", () => {
-    it("team member can claim vested tokens and stake them", async () => {
+  describe("Vesting → claim → delegate (governance, not yield)", () => {
+    it("team member can claim vested tokens and use them for governance voice", async () => {
       const TEAM_AMOUNT = ethers.parseEther("1000000");
 
-      // Deployer sets up vesting for team member
       const BTSH    = await ethers.getContractFactory("BTSH");
       const Vesting = await ethers.getContractFactory("TokenVesting");
-      const Staking = await ethers.getContractFactory("BTSHStaking");
 
-      const localBtsh   = await BTSH.deploy(deployer.address);
+      const localBtsh    = await BTSH.deploy(deployer.address);
       const localVesting = await Vesting.deploy(await localBtsh.getAddress(), deployer.address);
-      const localStaking = await Staking.deploy(await localBtsh.getAddress(), deployer.address);
 
       await localBtsh.mintInitial(deployer.address, ethers.parseEther("1000000000"));
       await localBtsh.approve(await localVesting.getAddress(), TEAM_AMOUNT);
 
-      await localVesting.createVesting(
-        teamMember.address,
-        TEAM_AMOUNT,
-        CLIFF_1Y,
-        VEST_3Y,
-        0
-      );
+      await localVesting.createVesting(teamMember.address, TEAM_AMOUNT, CLIFF_1Y, VEST_3Y, 0);
 
       // Advance past cliff + half vesting period
       await time.increase(CLIFF_1Y + VEST_3Y / 2);
@@ -173,14 +149,13 @@ describe("Integration", () => {
       // Team member claims ~50% of tokens
       const beforeClaim = await localBtsh.balanceOf(teamMember.address);
       await localVesting.connect(teamMember).claim();
-      const afterClaim = await localBtsh.balanceOf(teamMember.address);
-      const claimed = afterClaim - beforeClaim;
+      const claimed = (await localBtsh.balanceOf(teamMember.address)) - beforeClaim;
       expect(claimed).to.be.closeTo(TEAM_AMOUNT / 2n, ethers.parseEther("10000"));
 
-      // Team member stakes claimed tokens
-      await localBtsh.connect(teamMember).approve(await localStaking.getAddress(), claimed);
-      await localStaking.connect(teamMember).stake(claimed);
-      expect(await localStaking.stakes(teamMember.address).then(s => s.amount)).to.equal(claimed);
+      // Claimed tokens grant a governance voice (voting power), not yield.
+      await localBtsh.connect(teamMember).delegate(teamMember.address);
+      await mine(1);
+      expect(await localBtsh.getVotes(teamMember.address)).to.equal(claimed);
     });
   });
 
@@ -249,49 +224,6 @@ describe("Integration", () => {
           recipient.address, ethers.parseEther("1000000"), "drain"
         )
       ).to.be.revertedWith("Treasury: requires timelock");
-    });
-  });
-
-  // ── Staking + rewards end-to-end ──────────────────────────────────────────
-
-  describe("Staking end-to-end", () => {
-    it("reward accounting correct for two users joining at different times", async () => {
-      const BTSH    = await ethers.getContractFactory("BTSH");
-      const Staking = await ethers.getContractFactory("BTSHStaking");
-
-      const localBtsh   = await BTSH.deploy(deployer.address);
-      const localStaking = await Staking.deploy(await localBtsh.getAddress(), deployer.address);
-
-      await localBtsh.mintInitial(deployer.address, ethers.parseEther("1000000000"));
-
-      const RATE   = ethers.parseEther("1");   // 1 BTSH/sec
-      const BUDGET = ethers.parseEther("1000"); // 1000 seconds of rewards
-
-      await localBtsh.transfer(voter1.address, ethers.parseEther("10000"));
-      await localBtsh.transfer(voter2.address, ethers.parseEther("10000"));
-      await localBtsh.connect(voter1).approve(await localStaking.getAddress(), ethers.MaxUint256);
-      await localBtsh.connect(voter2).approve(await localStaking.getAddress(), ethers.MaxUint256);
-      await localBtsh.approve(await localStaking.getAddress(), ethers.MaxUint256);
-
-      await localStaking.setRewardRate(RATE);
-      await localStaking.depositRewards(BUDGET);
-
-      // voter1 stakes 1000 at t=0
-      await localStaking.connect(voter1).stake(ethers.parseEther("1000"));
-      // Advance 100 seconds — voter1 earns all 100 BTSH (sole staker)
-      await time.increase(100);
-      // voter2 joins with 1000 at t=100
-      await localStaking.connect(voter2).stake(ethers.parseEther("1000"));
-      // Advance 100 more seconds — split 50/50: each earns 50 BTSH
-      await time.increase(100);
-
-      const earned1 = await localStaking.earned(voter1.address);
-      const earned2 = await localStaking.earned(voter2.address);
-
-      // voter1: 100 (first 100s solo) + 50 (second 100s split) = 150 BTSH
-      expect(earned1).to.be.closeTo(ethers.parseEther("150"), ethers.parseEther("2"));
-      // voter2: 0 (first 100s) + 50 (second 100s split) = 50 BTSH
-      expect(earned2).to.be.closeTo(ethers.parseEther("50"), ethers.parseEther("2"));
     });
   });
 });

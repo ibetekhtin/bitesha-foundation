@@ -41,8 +41,9 @@ async function main() {
   await verify(addr.governance,      [addr.btsh, addr.timelock]);
   await verify(addr.treasury,        [addr.btsh, deployer.address]);
   await verify(addr.vesting,         [addr.btsh, deployer.address]);
-  await verify(addr.staking,         [addr.btsh, deployer.address]);
   await verify(addr.proposalManager, []);
+  if (addr.charityVault)         await verify(addr.charityVault,         [process.env.USDC_ADDRESS, deployer.address]);
+  if (addr.transparencyRegistry) await verify(addr.transparencyRegistry, [deployer.address]);
 
   console.log("\n✅ Verification complete.\n");
 }

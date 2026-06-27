@@ -7,7 +7,7 @@
  *   3. BITESHAGovernance
  *   4. BITESHATreasury
  *   5. TokenVesting
- *   6. BTSHStaking
+ *   6. CharityVault + TransparencyRegistry (if USDC_ADDRESS set)
  *   7. ProposalManager
  *   8. Genesis mint → treasury
  *   9. Vesting schedules
@@ -61,11 +61,25 @@ async function main() {
   await vesting.waitForDeployment();
   console.log(`✅ TokenVesting deployed:   ${await vesting.getAddress()}`);
 
-  // ── 6. Staking ────────────────────────────────────────────────────────────
-  const Staking = await ethers.getContractFactory("BTSHStaking");
-  const staking = await Staking.deploy(await btsh.getAddress(), deployer.address);
-  await staking.waitForDeployment();
-  console.log(`✅ BTSHStaking deployed:    ${await staking.getAddress()}`);
+  // ── 6. Charity: CharityVault + TransparencyRegistry ───────────────────────
+  // CharityVault enforces the immutable 80/20 food/ops split in a stablecoin.
+  // Set USDC_ADDRESS to the network's USDC; required for a real deployment.
+  const usdcAddress = process.env.USDC_ADDRESS;
+  let vault, registry;
+  if (usdcAddress) {
+    const Vault = await ethers.getContractFactory("CharityVault");
+    vault = await Vault.deploy(usdcAddress, deployer.address);
+    await vault.waitForDeployment();
+    console.log(`✅ CharityVault deployed:   ${await vault.getAddress()}`);
+
+    const Registry = await ethers.getContractFactory("TransparencyRegistry");
+    registry = await Registry.deploy(deployer.address);
+    await registry.waitForDeployment();
+    console.log(`✅ TransparencyRegistry deployed: ${await registry.getAddress()}`);
+  } else {
+    console.log(`⚠️  USDC_ADDRESS not set — skipping CharityVault/TransparencyRegistry.`);
+    console.log(`    Set USDC_ADDRESS and redeploy to enable the charity flow.`);
+  }
 
   // ── 7. ProposalManager ────────────────────────────────────────────────────
   const PM = await ethers.getContractFactory("ProposalManager");
@@ -113,8 +127,9 @@ async function main() {
     governance:      await gov.getAddress(),
     treasury:        await treasury.getAddress(),
     vesting:         await vesting.getAddress(),
-    staking:         await staking.getAddress(),
     proposalManager: await proposalManager.getAddress(),
+    charityVault:        vault ? await vault.getAddress() : null,
+    transparencyRegistry: registry ? await registry.getAddress() : null,
   };
 
   const outFile = path.join(__dirname, `../deployments/${network.name}.json`);

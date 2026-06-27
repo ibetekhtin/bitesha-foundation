@@ -8,7 +8,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title TokenVesting
- * @notice Linear vesting with cliff for team, investors, and advisors.
+ * @notice Linear vesting with cliff for team, advisors, and contributors —
+ *         i.e. compensation for work on the mission, NOT investor returns.
  *         Each beneficiary gets exactly one schedule.
  */
 contract TokenVesting is Ownable, ReentrancyGuard {

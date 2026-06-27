@@ -12,6 +12,10 @@ import "@openzeppelin/contracts/utils/Nonces.sol";
  * @title BTSH — BITESHA Token
  * @notice Fixed-supply ERC-20 with on-chain vote delegation (ERC20Votes).
  *         Genesis mint only. No inflation. Pausable by owner (should be transferred to DAO).
+ *
+ *         BTSH is a DONATION RECEIPT + GOVERNANCE token. It carries no yield, no
+ *         staking rewards, and no claim on profit — holding it confers a voice in
+ *         the charity's governance, not an expectation of financial return.
  */
 contract BTSH is ERC20, ERC20Permit, ERC20Votes, Ownable, Pausable {
     uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10 ** 18; // 1 billion BTSH
