@@ -11,12 +11,13 @@ const ARBSCAN_KEY  = process.env.ARBSCAN_API_KEY   || "";
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.20",
+    version: "0.8.28",
     settings: {
       optimizer: {
         enabled: true,
         runs: 200,
       },
+      evmVersion: "cancun",
       viaIR: true,
     },
   },
@@ -71,5 +72,12 @@ module.exports = {
   gasReporter: {
     enabled:  process.env.REPORT_GAS === "true",
     currency: "USD",
+  },
+
+  paths: {
+    sources: "./contracts",
+    tests:   "./contracts/tests",
+    cache:   "./cache",
+    artifacts: "./artifacts",
   },
 };
