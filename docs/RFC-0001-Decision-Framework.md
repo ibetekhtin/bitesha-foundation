@@ -18,7 +18,7 @@ This filter sits above all others. Any decision that passes Filters 1–5 but fa
 
 **Does this align with our mission and long-term direction?**
 
-BITESHA exists to build durable, trustworthy Web3 infrastructure. A decision that conflicts with this — even if profitable today — is outside our scope.
+BITESHA exists to feed people on the streets of New York through a verifiable, trustworthy charitable ecosystem. A decision that conflicts with this — even if it would raise more money today — is outside our scope.
 
 ---
 

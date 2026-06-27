@@ -39,7 +39,7 @@ Responsible for:
 - UX and onboarding flow design
 - Product roadmap and prioritization
 - Growth loops and market positioning
-- Investor and partner communications
+- Donor and partner communications
 - Community messaging
 
 **Trigger:** Any task touching user experience, strategy, or external communications.
@@ -105,5 +105,5 @@ All AI-generated code is:
 - Tagged with the AI role that produced it in the commit message
 
 ```
-feat(contracts): add BTSHStaking linear reward model [CTO]
+feat(charity): add CharityVault immutable 80/20 split [CTO]
 ```

@@ -16,7 +16,7 @@
 | Deploy BTSH token to Base Sepolia | CTO | Day 5 |
 | Deploy Vesting, Treasury, Governance | CTO | Day 10 |
 | Configure multisig (3-of-5) | Founder | Day 12 |
-| Deploy Staking contract | CTO | Day 15 |
+| Deploy CharityVault + TransparencyRegistry | CTO | Day 15 |
 | Write and run full test suite | CTO | Day 20 |
 | External security audit (scope + submit) | Founder | Day 25 |
 | Document all contracts | CTO | Day 30 |
@@ -48,7 +48,7 @@
 | Backend API layer (transaction relay, auth) | Engineering | Day 45 |
 | Basic developer SDK (npm package) | Engineering | Day 50 |
 | Internal beta: 10 developers onboarded | Founder | Day 55 |
-| Dashboard: treasury + staking visibility | Engineering | Day 58 |
+| Dashboard: charity transparency (raised / food / meals) | Engineering | Day 58 |
 | SDK documentation published | CTO | Day 60 |
 
 ### KPIs — Phase 2
@@ -133,13 +133,13 @@ TGE (Day 68)
  ↓
 Treasury receives 1B BTSH
  ↓
-Vesting contracts activated (team, investors)
+Vesting contracts activated (team, advisors, contributors)
  ↓
 DEX liquidity seeded (5% of supply, locked)
  ↓
-Public sale tokens distributed
+Public donation round tokens distributed
  ↓
-Ecosystem rewards activated (community allocation)
+Community & DAO governance distribution activated
  ↓
-Organic demand from real usage
+Donations flow through CharityVault (80/20), reported monthly
 ```
