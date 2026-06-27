@@ -1,0 +1,14 @@
+node_modules/
+artifacts/
+cache/
+coverage/
+coverage.json
+typechain-types/
+
+.env
+.env.*
+!.env.example
+
+deployments/base-mainnet.json
+
+*.log

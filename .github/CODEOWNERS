@@ -1,0 +1,4 @@
+# All contracts require review before merge
+contracts/ @ibetekhtin
+scripts/   @ibetekhtin
+docs/      @ibetekhtin

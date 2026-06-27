@@ -1,0 +1,12 @@
+{
+  "_comment": "Populated by scripts/deploy.js after testnet deployment",
+  "network": "base-sepolia",
+  "chainId": "84532",
+  "btsh": "",
+  "timelock": "",
+  "governance": "",
+  "treasury": "",
+  "vesting": "",
+  "staking": "",
+  "proposalManager": ""
+}

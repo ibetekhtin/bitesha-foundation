@@ -1,0 +1,31 @@
+{
+  "name": "bitesha-foundation",
+  "version": "0.1.0",
+  "description": "BITESHA Foundation — smart contracts for the BTSH ecosystem token, treasury, governance, and staking",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "coverage": "hardhat coverage",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network base-sepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network base-mainnet",
+    "verify:testnet": "hardhat run scripts/verify.js --network base-sepolia",
+    "verify:mainnet": "hardhat run scripts/verify.js --network base-mainnet",
+    "lint": "solhint 'contracts/**/*.sol'",
+    "size": "hardhat size-contracts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.2",
+    "hardhat-contract-sizer": "^2.10.0",
+    "solhint": "^5.0.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
