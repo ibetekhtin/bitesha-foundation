@@ -58,4 +58,59 @@ describe("BTSH Token", () => {
     await btsh.connect(treasury).transfer(other.address, 100n);
     expect(await btsh.balanceOf(other.address)).to.equal(100n);
   });
+
+  describe("ERC20Permit", () => {
+    it("nonces start at zero and a valid permit sets allowance", async () => {
+      const MAX = await btsh.MAX_SUPPLY();
+      await btsh.mintInitial(treasury.address, MAX);
+
+      expect(await btsh.nonces(treasury.address)).to.equal(0n);
+
+      const value    = ethers.parseEther("1000");
+      const deadline  = ethers.MaxUint256;
+      const net       = await ethers.provider.getNetwork();
+
+      const domain = {
+        name: "BITESHA",
+        version: "1",
+        chainId: net.chainId,
+        verifyingContract: await btsh.getAddress(),
+      };
+      const types = {
+        Permit: [
+          { name: "owner",    type: "address" },
+          { name: "spender",  type: "address" },
+          { name: "value",    type: "uint256" },
+          { name: "nonce",    type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+      };
+      const message = {
+        owner: treasury.address,
+        spender: other.address,
+        value,
+        nonce: 0n,
+        deadline,
+      };
+
+      const sig = await treasury.signTypedData(domain, types, message);
+      const { v, r, s } = ethers.Signature.from(sig);
+
+      await btsh.permit(treasury.address, other.address, value, deadline, v, r, s);
+
+      expect(await btsh.allowance(treasury.address, other.address)).to.equal(value);
+      expect(await btsh.nonces(treasury.address)).to.equal(1n);
+    });
+  });
+
+  describe("ERC20Votes", () => {
+    it("delegation activates voting power equal to balance", async () => {
+      const MAX = await btsh.MAX_SUPPLY();
+      await btsh.mintInitial(treasury.address, MAX);
+
+      expect(await btsh.getVotes(treasury.address)).to.equal(0n); // no votes until delegation
+      await btsh.connect(treasury).delegate(treasury.address);
+      expect(await btsh.getVotes(treasury.address)).to.equal(MAX);
+    });
+  });
 });

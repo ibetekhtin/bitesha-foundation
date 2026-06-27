@@ -82,4 +82,101 @@ describe("TokenVesting", () => {
       vesting.createVesting(beneficiary.address, AMOUNT, CLIFF, DURATION, 0)
     ).to.be.revertedWith("Vesting: schedule exists");
   });
+
+  // ── Input validation branches ────────────────────────────────────────────
+
+  describe("createVesting validation", () => {
+    it("reverts on zero beneficiary", async () => {
+      await btsh.approve(await vesting.getAddress(), AMOUNT);
+      await expect(
+        vesting.createVesting(ethers.ZeroAddress, AMOUNT, CLIFF, DURATION, 0)
+      ).to.be.revertedWith("Vesting: zero beneficiary");
+    });
+
+    it("reverts on zero amount", async () => {
+      await expect(
+        vesting.createVesting(other.address, 0, CLIFF, DURATION, 0)
+      ).to.be.revertedWith("Vesting: zero amount");
+    });
+
+    it("reverts on zero duration", async () => {
+      await btsh.approve(await vesting.getAddress(), AMOUNT);
+      await expect(
+        vesting.createVesting(other.address, AMOUNT, CLIFF, 0, 0)
+      ).to.be.revertedWith("Vesting: zero duration");
+    });
+
+    it("only owner can create a schedule", async () => {
+      await expect(
+        vesting.connect(other).createVesting(other.address, AMOUNT, CLIFF, DURATION, 0)
+      ).to.be.reverted;
+    });
+  });
+
+  // ── startOffset branch ───────────────────────────────────────────────────
+
+  describe("startOffset", () => {
+    it("delays vesting start by startOffset", async () => {
+      const OFFSET = 30 * 24 * 3600; // 30 days
+      const AMT = ethers.parseEther("1000000");
+      await btsh.approve(await vesting.getAddress(), AMT);
+      await vesting.createVesting(other.address, AMT, CLIFF, DURATION, OFFSET);
+
+      // Even after CLIFF passes from now, vesting hasn't started because of offset
+      await time.increase(CLIFF + 1);
+      expect(await vesting.claimableAmount(other.address)).to.equal(0n);
+
+      // After offset + cliff, tokens begin unlocking
+      await time.increase(OFFSET);
+      expect(await vesting.claimableAmount(other.address)).to.be.gt(0n);
+    });
+  });
+
+  // ── claim branches ───────────────────────────────────────────────────────
+
+  describe("claim validation", () => {
+    it("reverts when no schedule exists", async () => {
+      await expect(vesting.connect(other).claim())
+        .to.be.revertedWith("Vesting: no schedule");
+    });
+
+    it("reverts when nothing is claimable yet (before cliff)", async () => {
+      await expect(vesting.connect(beneficiary).claim())
+        .to.be.revertedWith("Vesting: nothing to claim");
+    });
+  });
+
+  // ── revoke branches ──────────────────────────────────────────────────────
+
+  describe("revoke validation", () => {
+    it("reverts when no schedule exists", async () => {
+      await expect(vesting.revoke(other.address))
+        .to.be.revertedWith("Vesting: no schedule");
+    });
+
+    it("cannot revoke twice", async () => {
+      await time.increase(CLIFF + DURATION / 4);
+      await vesting.revoke(beneficiary.address);
+      await expect(vesting.revoke(beneficiary.address))
+        .to.be.revertedWith("Vesting: already revoked");
+    });
+
+    it("only owner can revoke", async () => {
+      await expect(vesting.connect(other).revoke(beneficiary.address))
+        .to.be.reverted;
+    });
+
+    it("revoke before cliff returns full amount to owner, nothing to beneficiary", async () => {
+      const AMT = ethers.parseEther("1000000");
+      await btsh.approve(await vesting.getAddress(), AMT);
+      await vesting.createVesting(other.address, AMT, CLIFF, DURATION, 0);
+
+      const benefBefore = await btsh.balanceOf(other.address);
+      const ownerBefore = await btsh.balanceOf(owner.address);
+      await vesting.revoke(other.address);
+      // Nothing vested yet → beneficiary gets 0, owner gets full AMT back
+      expect(await btsh.balanceOf(other.address)).to.equal(benefBefore);
+      expect(await btsh.balanceOf(owner.address)).to.equal(ownerBefore + AMT);
+    });
+  });
 });
