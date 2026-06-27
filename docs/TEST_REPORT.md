@@ -17,9 +17,12 @@ Solc version: 0.8.28 · Optimizer: enabled · Runs: 200 · viaIR: true
 ## Test Summary
 
 ```
-154 passing
+190 passing
 0 failing
 ```
+
+> Includes the CharityVault suite (36 tests) enforcing the 80/20 food/ops split.
+> See [CHARITY.md](./CHARITY.md) for the charity model and on-chain/off-chain boundary.
 
 | Suite | Tests | Focus |
 |---|---|---|
