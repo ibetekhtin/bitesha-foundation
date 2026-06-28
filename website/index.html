@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BITESHA — Feeding New York, verifiably</title>
+<meta name="description" content="BITESHA is a charitable ecosystem feeding people on the streets of New York. Every contribution is split 80% food / 20% operations by an immutable smart contract — fully transparent, on-chain." />
+<style>
+  :root {
+    --bg:#0a0d13; --bg2:#0f141d; --card:#141a25; --line:#222b3a;
+    --text:#eaf0f7; --muted:#8b97a8; --food:#41d18b; --ops:#f0b43a; --accent:#41d18b;
+    --radius:16px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:var(--accent); text-decoration:none; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+  section { padding:80px 0; border-bottom:1px solid var(--line); }
+
+  /* Nav */
+  nav { position:sticky; top:0; z-index:50; backdrop-filter:blur(12px);
+    background:rgba(10,13,19,.8); border-bottom:1px solid var(--line); }
+  nav .wrap { display:flex; align-items:center; justify-content:space-between; height:64px; }
+  nav .logo { font-weight:800; font-size:18px; letter-spacing:-.3px; }
+  nav .links a { color:var(--muted); margin-left:22px; font-size:14px; }
+  nav .links a:hover { color:var(--text); }
+  @media(max-width:720px){ nav .links{display:none;} }
+
+  /* Hero */
+  .hero { padding:96px 0 80px; text-align:center; background:
+    radial-gradient(1200px 500px at 50% -10%, rgba(65,209,139,.12), transparent 60%); }
+  .badge { display:inline-block; font-size:12px; color:var(--food); border:1px solid rgba(65,209,139,.3);
+    padding:6px 14px; border-radius:100px; margin-bottom:22px; letter-spacing:.3px; }
+  .hero h1 { font-size:clamp(34px,6vw,60px); line-height:1.05; letter-spacing:-1.5px; font-weight:800; }
+  .hero h1 .grad { background:linear-gradient(120deg,var(--food),#7fe9c0); -webkit-background-clip:text;
+    background-clip:text; -webkit-text-fill-color:transparent; }
+  .hero p.lead { font-size:clamp(16px,2.4vw,21px); color:var(--muted); max-width:680px; margin:22px auto 0; }
+  .cta { margin-top:36px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .btn { padding:13px 24px; border-radius:12px; font-weight:600; font-size:15px; cursor:pointer; border:none; }
+  .btn.primary { background:var(--food); color:#062417; }
+  .btn.ghost { background:transparent; color:var(--text); border:1px solid var(--line); }
+  .btn:hover { transform:translateY(-1px); }
+  .disclaimer { margin-top:28px; font-size:12.5px; color:var(--muted); max-width:620px; margin-left:auto; margin-right:auto; }
+
+  /* Split visual */
+  .splitbar { display:flex; height:54px; border-radius:14px; overflow:hidden; margin:18px 0 8px; box-shadow:0 8px 30px rgba(0,0,0,.3); }
+  .splitbar .f { background:linear-gradient(180deg,var(--food),#2faf72); width:80%; display:flex; align-items:center; justify-content:center; color:#06281a; font-weight:700; }
+  .splitbar .o { background:linear-gradient(180deg,var(--ops),#c98e1e); width:20%; display:flex; align-items:center; justify-content:center; color:#3a2a05; font-weight:700; font-size:14px; }
+  .splitlabels { display:flex; justify-content:space-between; color:var(--muted); font-size:13px; }
+
+  h2.title { font-size:clamp(26px,4vw,38px); letter-spacing:-.8px; font-weight:800; }
+  .sub { color:var(--muted); margin-top:10px; max-width:680px; }
+
+  .grid { display:grid; gap:18px; margin-top:36px; }
+  .g3 { grid-template-columns:repeat(3,1fr); }
+  .g2 { grid-template-columns:repeat(2,1fr); }
+  .g4 { grid-template-columns:repeat(4,1fr); }
+  @media(max-width:860px){ .g3,.g4{grid-template-columns:1fr 1fr;} }
+  @media(max-width:560px){ .g2,.g3,.g4{grid-template-columns:1fr;} }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:24px; }
+  .card h3 { font-size:17px; margin-bottom:8px; }
+  .card p { color:var(--muted); font-size:14.5px; }
+  .card .ico { font-size:24px; margin-bottom:14px; }
+
+  .stat .num { font-size:30px; font-weight:800; }
+  .stat.food .num { color:var(--food); } .stat.ops .num { color:var(--ops); }
+  .stat .lbl { color:var(--muted); font-size:13px; text-transform:uppercase; letter-spacing:.5px; }
+
+  /* Steps */
+  .steps { counter-reset:s; }
+  .step { display:flex; gap:18px; align-items:flex-start; padding:20px 0; border-bottom:1px solid var(--line); }
+  .step:last-child{border-bottom:none;}
+  .step .n { counter-increment:s; flex:0 0 38px; height:38px; border-radius:50%; background:rgba(65,209,139,.12);
+    color:var(--food); display:flex; align-items:center; justify-content:center; font-weight:700; }
+  .step .n::before{content:counter(s);}
+  .step h4 { font-size:16px; } .step p { color:var(--muted); font-size:14.5px; }
+
+  /* Honesty box */
+  .honesty { background:linear-gradient(180deg,rgba(240,180,58,.06),transparent); border:1px solid rgba(240,180,58,.25); border-radius:var(--radius); padding:26px; }
+  .honesty h3 { color:var(--ops); }
+
+  /* token table */
+  table { width:100%; border-collapse:collapse; margin-top:18px; font-size:14px; }
+  th,td { text-align:left; padding:12px 14px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
+  .pill { display:inline-block; font-size:11px; padding:3px 10px; border-radius:100px; background:rgba(65,209,139,.12); color:var(--food); }
+
+  .tags { display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
+  .tag { font-size:12.5px; color:var(--muted); border:1px solid var(--line); padding:7px 13px; border-radius:100px; }
+
+  footer { padding:50px 0; text-align:center; color:var(--muted); font-size:13px; }
+  footer .links a { color:var(--muted); margin:0 10px; }
+  .built { margin-top:18px; font-size:12px; opacity:.7; }
+  .yes { color:var(--food); } .no { color:#e0726f; }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="logo">🍽️ BITESHA</div>
+  <div class="links">
+    <a href="#how">How it works</a>
+    <a href="#transparency">Transparency</a>
+    <a href="#token">Token</a>
+    <a href="#tech">Technology</a>
+    <a href="#docs">Docs</a>
+  </div>
+</div></nav>
+
+<!-- HERO -->
+<header class="hero"><div class="wrap">
+  <span class="badge">● Charitable ecosystem · Built on Base</span>
+  <h1>Feeding New York,<br/><span class="grad">verifiably.</span></h1>
+  <p class="lead">BITESHA turns charitable giving from <em>“trust us”</em> into <em>“verify us.”</em>
+    Every contribution is split <strong>80% food / 20% operations</strong> by an immutable
+    smart contract — and every dollar is recorded on a public blockchain.</p>
+  <div class="cta">
+    <a class="btn primary" href="#how">See how it works</a>
+    <a class="btn ghost" href="#transparency">Live transparency</a>
+  </div>
+  <p class="disclaimer">BITESHA is a donation &amp; impact project. <strong>BTSH is not an
+    investment</strong> — it carries no yield, no profit mechanics, and is not marketed for
+    financial return. Not soliciting public funds until audit &amp; legal review complete.</p>
+
+  <div style="max-width:640px;margin:48px auto 0">
+    <div class="splitbar"><div class="f">80% → FOOD</div><div class="o">20% → OPS</div></div>
+    <div class="splitlabels"><span>🍽️ Buying food for NYC streets</span><span>⚙️ Logistics &amp; ops</span></div>
+  </div>
+</div></header>
+
+<!-- PROBLEM -->
+<section><div class="wrap">
+  <h2 class="title">The trust gap in giving</h2>
+  <p class="sub">People go hungry on NYC streets every day. Meanwhile donors hesitate — because
+    they rarely see where their money actually goes.</p>
+  <div class="grid g3">
+    <div class="card"><div class="ico">🕳️</div><h3>Opacity</h3><p>Donors rarely see where funds really land, or how much reaches the people in need.</p></div>
+    <div class="card"><div class="ico">❓</div><h3>Overhead doubt</h3><p>“How much is actually spent on the cause?” is hard to answer and easy to distrust.</p></div>
+    <div class="card"><div class="ico">📄</div><h3>Unverifiable reports</h3><p>An annual PDF you have to take on faith — not something you can independently check.</p></div>
+  </div>
+</div></section>
+
+<!-- HOW -->
+<section id="how"><div class="wrap">
+  <h2 class="title">How BITESHA works</h2>
+  <p class="sub">A smart contract enforces the split and records everything. People, receipts and
+    independent oversight handle the real-world step.</p>
+  <div class="steps" style="margin-top:30px">
+    <div class="step"><div class="n"></div><div><h4>You contribute USDC</h4><p>Stablecoin keeps the food budget steady — $80 earmarked for food stays worth $80 until the food is bought.</p></div></div>
+    <div class="step"><div class="n"></div><div><h4>The contract splits 80/20 — immutably</h4><p>80% to a food fund, 20% to operations. The ratio is fixed in code; not even the team or the DAO can change it. Rounding always favours food (provably ≥ 80%).</p></div></div>
+    <div class="step"><div class="n"></div><div><h4>Food is bought for NYC streets</h4><p>Operators withdraw from the food fund to buy meals from real suppliers. Each spend logs a purpose and a receipt hash on-chain.</p></div></div>
+    <div class="step"><div class="n"></div><div><h4>You get BTSH — a receipt + a vote</h4><p>A donation receipt and a governance vote in the BITESHA DAO. No yield, no return — a voice, not an investment.</p></div></div>
+    <div class="step"><div class="n"></div><div><h4>Monthly signed reports, anchored on-chain</h4><p>Receipts, photos and video are bundled, cryptographically signed, and anchored on-chain so anyone can verify them.</p></div></div>
+  </div>
+</div></section>
+
+<!-- TRANSPARENCY -->
+<section id="transparency"><div class="wrap">
+  <h2 class="title">Transparency you can check yourself</h2>
+  <p class="sub">Nothing here is self-reported. These numbers come straight from the blockchain
+    once the contracts are live.</p>
+  <div class="grid g4" style="margin-top:28px">
+    <div class="card stat"><div class="lbl">Total raised</div><div class="num" id="s-raised">—</div></div>
+    <div class="card stat food"><div class="lbl">To food</div><div class="num" id="s-food">—</div></div>
+    <div class="card stat ops"><div class="lbl">To operations</div><div class="num" id="s-ops">—</div></div>
+    <div class="card stat"><div class="lbl">Meals funded</div><div class="num" id="s-meals">—</div></div>
+  </div>
+  <p class="sub" id="dash-note" style="margin-top:18px">
+    A live dashboard reads these directly from the <code>CharityVault</code> contract.
+    <a href="../dashboard/index.html">Open the live dashboard →</a></p>
+
+  <div class="grid g3" style="margin-top:34px">
+    <div class="card"><div class="ico">🔒</div><h3>Immutable 80/20</h3><p>The split is a hard-coded constant. A charity promise that could be quietly edited isn’t a promise.</p></div>
+    <div class="card"><div class="ico">🧾</div><h3>On-chain receipts</h3><p>Every food purchase logs a purpose and a receipt hash, reconcilable against the monthly report.</p></div>
+    <div class="card"><div class="ico">✍️</div><h3>Signed monthly reports</h3><p>Anchored on-chain via a registry. Anyone can verify a report with our open-source tool.</p></div>
+  </div>
+</div></section>
+
+<!-- HONESTY -->
+<section><div class="wrap">
+  <div class="honesty">
+    <h3>What we’re honest about</h3>
+    <p style="color:var(--muted);margin-top:10px">The smart contract guarantees the <strong>split</strong>
+      and the <strong>transparency</strong>. It cannot, by itself, guarantee that the 80% is
+      physically spent on food — that final step happens in the real world, secured by published
+      receipts, photos, video, and multisig control including <strong>independent representatives</strong>,
+      not by code. We say this plainly because a charity that overstates its technology isn’t trustworthy.</p>
+  </div>
+</div></section>
+
+<!-- TOKEN -->
+<section id="token"><div class="wrap">
+  <h2 class="title">The BTSH token</h2>
+  <p class="sub">A donation receipt and a governance right — deliberately designed with no profit
+    mechanics, to keep the project a charity, not an investment.</p>
+  <div class="grid g2" style="margin-top:26px">
+    <div class="card">
+      <h3>What BTSH <span class="yes">is</span></h3>
+      <p style="margin-top:8px">✓ A donation receipt for supporting the mission<br/>
+        ✓ A governance vote in the BITESHA DAO<br/>
+        ✓ Fixed supply (1,000,000,000), no inflation</p>
+    </div>
+    <div class="card">
+      <h3>What BTSH is <span class="no">not</span></h3>
+      <p style="margin-top:8px">✗ No staking, no yield, no rewards<br/>
+        ✗ No private-investor tranche, no buybacks<br/>
+        ✗ Not marketed for price appreciation or return</p>
+    </div>
+  </div>
+  <table>
+    <tr><th>Allocation</th><th>Share</th></tr>
+    <tr><td>Ecosystem &amp; growth of the mission</td><td>30%</td></tr>
+    <tr><td>Foundation treasury</td><td>20%</td></tr>
+    <tr><td>Team (compensation, vested)</td><td>15%</td></tr>
+    <tr><td>Community &amp; DAO governance</td><td>15%</td></tr>
+    <tr><td>Charity reserve</td><td>10%</td></tr>
+    <tr><td>Public donation round</td><td>5%</td></tr>
+    <tr><td>DEX liquidity (locked 1y)</td><td>5%</td></tr>
+  </table>
+</div></section>
+
+<!-- TECH -->
+<section id="tech"><div class="wrap">
+  <h2 class="title">Built to be audited</h2>
+  <p class="sub">Eleven smart contracts on Base, with security treated as a feature — not an afterthought.</p>
+  <div class="grid g4" style="margin-top:26px">
+    <div class="card stat"><div class="lbl">Tests passing</div><div class="num">165</div></div>
+    <div class="card stat food"><div class="lbl">Line coverage</div><div class="num">100%</div></div>
+    <div class="card stat"><div class="lbl">Production contracts</div><div class="num">11</div></div>
+    <div class="card stat ops"><div class="lbl">Profit mechanics</div><div class="num">0</div></div>
+  </div>
+  <div class="tags">
+    <span class="tag">Solidity 0.8.28</span><span class="tag">OpenZeppelin v5</span>
+    <span class="tag">ERC20Votes governance</span><span class="tag">2-day timelock</span>
+    <span class="tag">Reentrancy-guarded</span><span class="tag">Invariant fuzzing</span>
+    <span class="tag">Immutable 80/20 split</span><span class="tag">Multisig custody</span>
+  </div>
+  <div class="grid g3" style="margin-top:34px">
+    <div class="card"><div class="ico">🛡️</div><h3>Independent audit</h3><p>Code freeze + external smart-contract audit before any public launch.</p></div>
+    <div class="card"><div class="ico">⚖️</div><h3>Legal review</h3><p>US counsel on token structure, charitable registration, and securities law before launch.</p></div>
+    <div class="card"><div class="ico">📊</div><h3>Annual financial audit</h3><p>Independent yearly review of charity fund movement and reporting.</p></div>
+  </div>
+</div></section>
+
+<!-- ROADMAP -->
+<section><div class="wrap">
+  <h2 class="title">Roadmap</h2>
+  <p class="sub">Sequenced so that no public fundraising happens before audit and legal review.</p>
+  <div class="steps" style="margin-top:24px">
+    <div class="step"><div class="n"></div><div><h4>Foundation — done</h4><p>Contracts, 165 tests at 100% line coverage, invariant fuzzing, full document package.</p></div></div>
+    <div class="step"><div class="n"></div><div><h4>Independent audit</h4><p>Code freeze, external review, remediation, public report.</p></div></div>
+    <div class="step"><div class="n"></div><div><h4>Legal review</h4><p>Entity structure, securities, charitable registration, AML/KYC.</p></div></div>
+    <div class="step"><div class="n"></div><div><h4>Charitable structure &amp; compliance</h4><p>501(c)(3) / partner / fiscal sponsor; apply counsel’s recommendations.</p></div></div>
+    <div class="step"><div class="n"></div><div><h4>Public launch</h4><p>Open contributions, begin food distribution, first signed monthly report.</p></div></div>
+  </div>
+</div></section>
+
+<!-- DOCS -->
+<section id="docs"><div class="wrap">
+  <h2 class="title">Documentation</h2>
+  <p class="sub">The full project package — whitepaper, token model, architecture, transparency, and
+    the briefs prepared for auditors and counsel.</p>
+  <div class="grid g3" style="margin-top:26px">
+    <div class="card"><h3>📘 Whitepaper</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/Whitepaper.md">Read →</a></p></div>
+    <div class="card"><h3>🎗️ Token Model</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/TOKEN_MODEL.md">No-profit design →</a></p></div>
+    <div class="card"><h3>🍽️ Charity Model</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/CHARITY.md">The 80/20 split →</a></p></div>
+    <div class="card"><h3>🔍 Transparency</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/TRANSPARENCY.md">How we report →</a></p></div>
+    <div class="card"><h3>🏛️ DAO Governance</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/DAO-Governance.md">How decisions are made →</a></p></div>
+    <div class="card"><h3>🧱 Architecture</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/Smart-Contract-Architecture.md">Contract map →</a></p></div>
+    <div class="card"><h3>🛡️ Security</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/Security-Architecture.md">Threat model →</a></p></div>
+    <div class="card"><h3>✅ Test Report</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/TEST_REPORT.md">Coverage &amp; fuzzing →</a></p></div>
+    <div class="card"><h3>📦 Full Package</h3><p><a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/00-PROJECT-PACKAGE.md">Index of everything →</a></p></div>
+  </div>
+  <div class="cta" style="justify-content:flex-start;margin-top:30px">
+    <a class="btn primary" href="https://github.com/ibetekhtin/bitesha-foundation" target="_blank" rel="noopener">View the code on GitHub</a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="logo" style="font-size:20px;margin-bottom:10px">🍽️ BITESHA</div>
+  <p>Feeding people on the streets of New York — verifiably.</p>
+  <div class="links" style="margin-top:14px">
+    <a href="https://github.com/ibetekhtin/bitesha-foundation" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/00-PROJECT-PACKAGE.md">Docs</a>
+    <a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/Terms-of-Use.md">Terms</a>
+    <a href="https://github.com/ibetekhtin/bitesha-foundation/blob/main/docs/Privacy-Policy.md">Privacy</a>
+  </div>
+  <p class="disclaimer" style="margin-top:22px">BITESHA is a donation &amp; impact project. BTSH is not
+    an investment and carries no profit expectation. This site is informational and is not an offer
+    to sell securities or solicit funds. The project will not solicit public contributions until
+    independent audit and legal review are complete.</p>
+  <p class="built">Smart contracts, transparency system &amp; site — engineered with an AI-augmented team.</p>
+</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+<script>
+// Optional: live stats. Set these to your deployed CharityVault + an RPC to activate.
+const VAULT_ADDRESS = ""; // e.g. "0x..." once deployed
+const RPC_URL = "https://mainnet.base.org";
+const ABI = [
+  "function stats() view returns (uint256 received,uint256 allocatedFood,uint256 allocatedOps,uint256 spentFood,uint256 spentOps,uint256 availableFood,uint256 availableOps)",
+  "function totalMealsFunded() view returns (uint256)"
+];
+const fmtUSD = (v)=>"$"+Number(ethers.formatUnits(v,6)).toLocaleString(undefined,{maximumFractionDigits:0});
+async function loadStats(){
+  if(!VAULT_ADDRESS){
+    document.getElementById("dash-note").innerHTML =
+      'Live figures activate once the audited contracts are deployed. ' +
+      '<a href="../dashboard/index.html">Preview the live dashboard tool →</a>';
+    return;
+  }
+  try{
+    const p=new ethers.JsonRpcProvider(RPC_URL);
+    const v=new ethers.Contract(VAULT_ADDRESS,ABI,p);
+    const s=await v.stats(); const m=await v.totalMealsFunded();
+    document.getElementById("s-raised").textContent=fmtUSD(s.received);
+    document.getElementById("s-food").textContent=fmtUSD(s.allocatedFood);
+    document.getElementById("s-ops").textContent=fmtUSD(s.allocatedOps);
+    document.getElementById("s-meals").textContent=Number(m).toLocaleString();
+  }catch(e){ /* leave placeholders */ }
+}
+loadStats();
+</script>
+</body>
+</html>
