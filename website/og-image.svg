@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0d13"/>
+      <stop offset="1" stop-color="#0f1620"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.25" r="0.7">
+      <stop offset="0" stop-color="#41d18b" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#41d18b" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="food" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#41d18b"/><stop offset="1" stop-color="#2faf72"/>
+    </linearGradient>
+    <linearGradient id="ops" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0b43a"/><stop offset="1" stop-color="#c98e1e"/>
+    </linearGradient>
+    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#41d18b"/><stop offset="1" stop-color="#7fe9c0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- full-canvas background (square; final crop keeps the centre 1200x630 band) -->
+  <rect width="1200" height="1200" fill="url(#bg)"/>
+  <rect width="1200" height="1200" fill="url(#glow)"/>
+
+  <!-- content lives within y∈[300,900] so the centre crop captures it -->
+
+  <!-- badge -->
+  <g transform="translate(90,330)">
+    <rect x="0" y="0" rx="20" ry="20" width="330" height="40" fill="none" stroke="#41d18b" stroke-opacity="0.4"/>
+    <text x="165" y="26" font-family="Helvetica, Arial, sans-serif" font-size="17" fill="#41d18b" text-anchor="middle" font-weight="600">Charitable ecosystem · Base</text>
+  </g>
+
+  <!-- logo -->
+  <text x="90" y="430" font-family="Helvetica, Arial, sans-serif" font-size="34" fill="#eaf0f7" font-weight="800">BITESHA</text>
+
+  <!-- headline -->
+  <text x="88" y="520" font-family="Helvetica, Arial, sans-serif" font-size="66" font-weight="800" fill="#eaf0f7">Feeding New York,</text>
+  <text x="88" y="598" font-family="Helvetica, Arial, sans-serif" font-size="66" font-weight="800" fill="url(#grad)">verifiably.</text>
+
+  <!-- subline -->
+  <text x="90" y="664" font-family="Helvetica, Arial, sans-serif" font-size="25" fill="#8b97a8">Every contribution split 80% food / 20% operations —</text>
+  <text x="90" y="700" font-family="Helvetica, Arial, sans-serif" font-size="25" fill="#8b97a8">by an immutable smart contract. Transparent, on-chain.</text>
+
+  <!-- split bar -->
+  <g transform="translate(90,740)">
+    <rect x="0" y="0" rx="12" ry="12" width="816" height="56" fill="url(#food)"/>
+    <rect x="816" y="0" rx="12" ry="12" width="204" height="56" fill="url(#ops)"/>
+    <rect x="808" y="0" width="16" height="56" fill="#0a0d13"/>
+    <text x="408" y="37" font-family="Helvetica, Arial, sans-serif" font-size="23" font-weight="700" fill="#06281a" text-anchor="middle">80% FOOD</text>
+    <text x="918" y="36" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#3a2a05" text-anchor="middle">20% OPS</text>
+  </g>
+
+  <!-- right stat block -->
+  <g transform="translate(995,400)" font-family="Helvetica, Arial, sans-serif" text-anchor="end">
+    <text x="115" y="0" font-size="44" font-weight="800" fill="#41d18b">165</text>
+    <text x="115" y="26" font-size="14" fill="#8b97a8">tests passing</text>
+    <text x="115" y="92" font-size="44" font-weight="800" fill="#eaf0f7">100%</text>
+    <text x="115" y="118" font-size="14" fill="#8b97a8">line coverage</text>
+    <text x="115" y="184" font-size="44" font-weight="800" fill="#f0b43a">0</text>
+    <text x="115" y="210" font-size="14" fill="#8b97a8">profit mechanics</text>
+  </g>
+</svg>
